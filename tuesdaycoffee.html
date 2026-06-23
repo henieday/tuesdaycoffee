@@ -258,7 +258,7 @@ function fmt(d) {
   return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
 }
 function tueDateOf(mon) { const t=new Date(mon); t.setDate(mon.getDate()+1); return t; }
-function weekKey() { return fmt(getThisWeekMonday()); }
+function weekKey() { const m = getThisWeekMonday(); return 'w' + m.getFullYear() + String(m.getMonth()+1).padStart(2,'0') + String(m.getDate()).padStart(2,'0'); }
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
