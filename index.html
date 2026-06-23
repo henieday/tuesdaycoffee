@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>튜커 | TuesdayCoffee 🔔</title>
+<style>
+:root {
+  --bg:       #f2e8d9;
+  --bg2:      #ecddc8;
+  --text:     #2c1a0e;
+  --text2:    rgba(44,26,14,0.55);
+  --text3:    rgba(44,26,14,0.35);
+  --accent:   #b8720a;
+  --accent2:  rgba(184,114,10,0.18);
+  --border:   rgba(44,26,14,0.12);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.screen { display: none; width: 500px; padding: 48px 40px; text-align: center; }
+.screen.active { display: block; }
+.logo { margin-bottom: 24px; }
+.logo img { height: 80px; width: auto; display: inline-block; vertical-align: middle; }
+.logo .emoji { font-size: 90px; vertical-align: middle; line-height: 1; }
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  color: var(--accent); border: 1px solid rgba(184,114,10,0.45);
+  border-radius: 20px; padding: 4px 14px; margin-bottom: 24px;
+}
+h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 10px; color: var(--text); }
+h1 .big { display: block; font-size: 52px; color: var(--accent); margin-top: 4px; }
+.sub { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 28px; }
+.who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.who-btn {
+  padding: 18px; background: rgba(44,26,14,0.05);
+  border: 1px solid var(--border); border-radius: 14px;
+  color: var(--text); font-size: 17px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.who-btn:hover { background: var(--accent2); border-color: rgba(184,114,10,0.5); color: var(--accent); }
+.schedule-box {
+  background: rgba(44,26,14,0.04); border: 0.5px solid var(--border);
+  border-radius: 14px; padding: 4px 20px; margin-bottom: 28px; text-align: left;
+}
+.row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; color: var(--text2); border-bottom: 0.5px solid var(--border); }
+.row:last-child { border-bottom: none; }
+.row.now { color: var(--accent); font-weight: 700; }
+.btn { padding: 14px 32px; border-radius: 50px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.1s, transform 0.1s; }
+.btn:active { transform: scale(0.97); }
+.btn-y { background: var(--accent); color: #fff; }
+.btn-y:hover { opacity: 0.88; }
+.btn-o { background: transparent; border: 1.5px solid rgba(44,26,14,0.2); color: var(--text2); font-size: 13px; padding: 9px 22px; }
+.btn-o:hover { border-color: rgba(44,26,14,0.4); }
+.result-box {
+  background: var(--accent2); border: 1px solid rgba(184,114,10,0.35);
+  border-radius: 14px; padding: 24px; margin-bottom: 20px;
+}
+.result-box .cafe { font-size: 36px; font-weight: 700; color: var(--accent); }
+.result-box .caption { font-size: 13px; color: var(--text2); margin-top: 6px; }
+.waiting-msg { font-size: 15px; color: var(--text2); margin-bottom: 20px; }
+.note { font-size: 11px; color: var(--text3); margin-top: 20px; }
+
+
+/* ── 커피잔 뒤집기 ── */
+.cups-stage {
+  position: relative;
+  background: url('table.jpg') center/cover no-repeat;
+  border-radius: 20px; overflow: hidden;
+  margin: 0 -40px 24px;
+  padding: 28px 24px 28px;
+}
+.cups-stage::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(30,16,4,0.18); pointer-events: none;
+}
+.cups-prompt {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.85); text-align: center;
+  margin: 0 0 20px; position: relative; z-index: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.cups-grid {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 18px; position: relative; z-index: 1;
+  margin-bottom: 0;
+}
+.cup-card {
+  width: 110px; height: 110px; cursor: pointer;
+  position: relative; transition: transform 0.18s, filter 0.18s;
+}
+.cup-card:not(.picked):hover {
+  transform: translateY(-6px) scale(1.08);
+  filter: drop-shadow(0 8px 16px rgba(100,60,10,0.35));
+}
+.cup-img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  display: block;
+}
+.cup-label {
+  position: absolute; inset: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent);
+  font-size: 11px; font-weight: 700; color: #fff;
+  text-align: center; padding: 8px; line-height: 1.4;
+  opacity: 0; transform: scale(0.7);
+  transition: opacity 0.4s ease 0.25s, transform 0.4s ease 0.25s;
+  box-shadow: 0 6px 20px rgba(184,114,10,0.5);
+}
+/* 선택된 컵: 이미지 사라지고 라벨 등장 */
+.cup-card.picked .cup-img { opacity: 0; transform: scale(0.7); }
+.cup-card.picked .cup-label { opacity: 1; transform: scale(1); }
+/* 선택 안 된 컵: 흐려짐 */
+.cup-card.faded .cup-img { opacity: 0.25; }
+/* 당첨 컵 강조 */
+.cup-card.winner-cup .cup-label {
+  background: #d4820c;
+  animation: winnerPop 0.5s ease 0.65s both;
+  box-shadow: 0 0 0 4px rgba(212,130,12,0.35), 0 4px 20px rgba(184,114,10,0.6);
+}
+@keyframes winnerPop { from{transform:scale(0.7)} 70%{transform:scale(1.12)} to{transform:scale(1)} }
+.dot-pulse { display: inline-block; }
+.dot-pulse::after { content: ''; animation: dots 1.5s infinite; }
+@keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+#popup-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(44,26,14,0.45); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+#popup-overlay.show { display: flex; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
+#popup-box {
+  background: var(--bg); border: 1.5px solid rgba(184,114,10,0.4);
+  border-radius: 24px; padding: 36px 32px; max-width: 360px; width: 90%; text-align: center;
+}
+#popup-emoji { font-size: 48px; margin-bottom: 16px; }
+#popup-cafe { font-size: 32px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+#popup-msg { font-size: 15px; color: var(--text2); line-height: 1.6; margin-bottom: 24px; }
+#popup-close { padding: 12px 32px; background: var(--accent); color: #fff; border: none; border-radius: 50px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#popup-close:hover { opacity: 0.88; }
+</style>
+</head>
+<body>
+
+<!-- 팡파레 팝업 -->
+<div id="popup-overlay" onclick="closePopup()">
+  <div id="popup-box" onclick="event.stopPropagation()">
+    <div id="popup-emoji">🎉</div>
+    <div id="popup-cafe"></div>
+    <div id="popup-msg"></div>
+    <button id="popup-close" onclick="closePopup()">확인</button>
+  </div>
+</div>
+
+<!-- 화면 1: 본인 선택 -->
+<div class="screen" id="s-who">
+  <div class="logo"><img src="logo.png" alt="튜커"> <span class="emoji">☕</span></div>
+  <div class="badge">Tuesday Coffee</div>
+  <h1>잠깐, 당신은<br>누구세요?</h1>
+  <p class="sub">매주 화요일 12:20 커피타임</p>
+  <div class="who-grid">
+    <button class="who-btn" onclick="pick('데니스')">데니스</button>
+    <button class="who-btn" onclick="pick('베리')">베리</button>
+    <button class="who-btn" onclick="pick('헤니')">헤니</button>
+    <button class="who-btn" onclick="pick('로엔')">로엔</button>
+  </div>
+</div>
+
+<!-- 화면 2: 메인 (당번) + 룰렛 통합 -->
+<div class="screen" id="s-main-duty">
+  <div class="logo"><img src="logo.png" alt="튜커"> <span class="emoji">☕</span></div>
+  <div class="badge" id="d-date"></div>
+  <h1>이번 주 튜커는<span class="big" id="d-name"></span></h1>
+  <p class="sub" id="d-comment"></p>
+
+  <div class="cups-stage">
+    <p class="cups-prompt">커피잔 하나 골라보세요 — 터치하면 오늘의 카페!</p>
+    <div class="cups-grid" id="cups-grid"></div>
+  </div>
+
+  <details style="margin-bottom:16px; text-align:left;">
+    <summary style="font-size:13px; color:var(--text3); cursor:pointer; list-style:none; text-align:center; margin-bottom:8px;">남은 주차 보기 ▾</summary>
+    <div class="schedule-box" id="d-schedule" style="margin-bottom:0;"></div>
+  </details>
+
+  <button class="btn btn-o" onclick="resetMe()">이전으로</button>
+  <canvas id="confetti-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;"></canvas>
+</div>
+
+<!-- 화면 3: 메인 (비당번) -->
+<div class="screen" id="s-main-other">
+  <div class="logo"><img src="logo.png" alt="튜커"> <span class="emoji">☕</span></div>
+  <div class="badge" id="o-date"></div>
+
+  <h1>이번 주 튜커는<span class="big" id="o-duty"></span></h1>
+  <p class="sub" id="o-comment"></p>
+
+  <!-- 결과 전: 대기 상태 (크고 잘 보이게) -->
+  <div id="o-waiting" style="margin: 8px 0 28px;">
+    <div style="background:rgba(44,26,14,0.10); border:1px dashed rgba(44,26,14,0.25); border-radius:16px; padding:28px 20px;">
+      <div style="font-size:32px; margin-bottom:10px;">⏳</div>
+      <div style="font-size:17px; font-weight:600; color:var(--accent);" id="o-duty-waiting"></div>
+      <div style="font-size:13px; color:var(--text2); margin-top:6px;">결과 나오면 자동으로 여기 뜹니다</div>
+    </div>
+  </div>
+
+  <!-- 결과 나온 후 자동으로 표시 -->
+  <div class="result-box" id="o-result" style="display:none; margin-bottom:28px;">
+    <div style="font-size:13px; font-weight:700; letter-spacing:0.08em; color:var(--accent); margin-bottom:12px;">오늘의 튜커 장소 ☕</div>
+    <div class="cafe" id="o-cafe" style="font-size:36px; font-weight:800; color:var(--text); line-height:1.25;"></div>
+    <div class="caption">튜커가 정했음. 거부권 없음. ☕</div>
+  </div>
+
+  <!-- 스케줄은 하단으로 -->
+  <details style="margin-bottom:20px; text-align:left;">
+    <summary style="font-size:13px; color:var(--text3); cursor:pointer; list-style:none; text-align:center; margin-bottom:8px;">남은 주차 보기 ▾</summary>
+    <div class="schedule-box" id="o-schedule" style="margin-bottom:0;"></div>
+  </details>
+
+  <button class="btn btn-o" onclick="resetMe()">이전으로</button>
+</div>
+
+<script>
+// ── Firebase 설정 (여기만 바꿔주세요) ──────────────────────────
+const FIREBASE_URL = 'https://tuesdaycoffee-eb5d8-default-rtdb.firebaseio.com';
+// ────────────────────────────────────────────────────────────────
+
+const MEMBERS = ['데니스', '베리', '헤니', '로엔'];
+const CAFES   = ['바나프레소', '빽다방', '메가커피', '편의점', '이노커피'];
+const COLORS  = ['#c62828','#f57f17','#2e7d32','#4527a0','#00695c'];
+const REF_MS  = new Date('2026-06-23T00:00:00').getTime();
+const REF_IDX = 1;
+
+const QUIPS = {
+  '데니스': '데니스님, 오늘 지갑 두껍죠? 🤑',
+  '베리':   '베리님, 도망가지 마세요 🏃',
+  '헤니':   '헤니님, 오늘의 주인공 👑',
+  '로엔':   '로엔님, 축하합니다 🎉 (거부권 없음)',
+};
+
+function getThisWeekMonday() {
+  const now = new Date(), d = now.getDay();
+  const t = new Date(now);
+  t.setDate(now.getDate() - (d === 0 ? 6 : d - 1));
+  t.setHours(0,0,0,0);
+  return t;
+}
+function getDutyIdx(mon) {
+  const weeks = Math.round((mon.getTime() - REF_MS) / (7*86400000));
+  return ((REF_IDX + weeks) % MEMBERS.length + MEMBERS.length) % MEMBERS.length;
+}
+function fmt(d) {
+  return d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0');
+}
+function tueDateOf(mon) { const t=new Date(mon); t.setDate(mon.getDate()+1); return t; }
+function weekKey() { return fmt(getThisWeekMonday()); }
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let currentMe = null;
+function pick(name) { currentMe = name; renderMain(); }
+function resetMe() { currentMe = null; if(es){es.close();es=null;} show('s-who'); }
+
+function buildSchedule(containerId) {
+  const mon = getThisWeekMonday();
+  let html = '';
+  for (let i = -1; i <= 3; i++) {
+    const m = new Date(mon); m.setDate(mon.getDate() + i*7);
+    const n = MEMBERS[getDutyIdx(m)];
+    html += `<div class="row${i===0?' now':''}"><span>${fmt(tueDateOf(m))} (화)</span><span>${n}</span></div>`;
+  }
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function renderMain() {
+  const mon = getThisWeekMonday();
+  const idx = getDutyIdx(mon);
+  const duty = MEMBERS[idx];
+  const dateStr = fmt(tueDateOf(mon)) + ' 화요일 ☕ 12:20';
+  const isDuty = currentMe === duty;
+
+  if (isDuty) {
+    document.getElementById('d-date').textContent = dateStr;
+    document.getElementById('d-name').textContent = currentMe;
+    document.getElementById('d-comment').textContent = QUIPS[duty];
+    buildSchedule('d-schedule');
+    show('s-main-duty');
+    initRoulette();
+  } else {
+    document.getElementById('o-date').textContent = dateStr;
+    document.getElementById('o-duty').textContent = duty;
+    document.getElementById('o-comment').textContent = QUIPS[duty];
+    buildSchedule('o-schedule');
+    document.getElementById('o-duty-waiting').textContent = duty + '님이 아직 뽑기 전이에요';
+    document.getElementById('o-waiting').style.display = 'block';
+    document.getElementById('o-result').style.display = 'none';
+    show('s-main-other');
+    listenForResult();
+  }
+}
+
+/* ── 동기화 (localStorage 즉시 + Firebase 실시간) ── */
+let es = null;
+const LS_KEY = 'tuker_result_' + weekKey();
+
+function listenForResult() {
+  // 이미 결과 있으면 바로 표시
+  const cached = localStorage.getItem(LS_KEY);
+  if (cached) { showOtherResult(cached); return; }
+
+  // localStorage 이벤트 (같은 컴퓨터 다른 탭)
+  window.addEventListener('storage', function(e) {
+    if (e.key === LS_KEY && e.newValue) showOtherResult(e.newValue);
+  });
+
+  // Firebase (Firebase URL 설정한 경우)
+  if (!FIREBASE_URL.includes('YOUR-PROJECT')) {
+    if (es) es.close();
+    es = new EventSource(FIREBASE_URL + '/tuker/' + weekKey() + '.json');
+    es.addEventListener('put', function(e) {
+      const payload = JSON.parse(e.data);
+      const cafe = payload.data && payload.data.cafe;
+      if (cafe) showOtherResult(cafe);
+    });
+  }
+}
+
+function showOtherResult(cafe) {
+  document.getElementById('o-waiting').style.display = 'none';
+  document.getElementById('o-cafe').innerHTML = '오늘은 ' + cafe + '에서<br>만나요!';
+  document.getElementById('o-result').style.display = 'block';
+}
+
+function saveResult(cafe) {
+  // localStorage에 저장 (같은 컴퓨터 다른 탭에 즉시 반영)
+  localStorage.setItem(LS_KEY, cafe);
+
+  // Firebase에도 저장 (설정된 경우)
+  if (!FIREBASE_URL.includes('YOUR-PROJECT')) {
+    fetch(FIREBASE_URL + '/tuker/' + weekKey() + '.json', {
+      method: 'PUT', body: JSON.stringify({ cafe })
+    });
+  }
+}
+
+function shareResult() {
+  const cafe = document.getElementById('winner-name').textContent;
+  saveResult(cafe);
+  const btn = document.getElementById('share-btn');
+  btn.textContent = '✅ 나머지 3명 화면에 자동 전송됐어요!';
+  btn.disabled = true;
+}
+
+/* ── 룰렛 ── */
+let spinning = false, angle = 0;
+
+let cupCafes = [];
+
+function initRoulette() {
+  const shuffled = [...CAFES].sort(() => Math.random() - 0.5);
+  cupCafes = shuffled;
+  const grid = document.getElementById('cups-grid');
+  grid.innerHTML = shuffled.map((cafe, i) => `
+    <div class="cup-card" id="cup-${i}" onclick="pickCup(${i})">
+      <img class="cup-img" src="coffee.png" alt="커피">
+      <div class="cup-label">${cafe}</div>
+    </div>
+  `).join('');
+}
+
+function pickCup(idx) {
+  // 모든 카드 클릭 막기
+  document.querySelectorAll('.cup-card').forEach(c => {
+    c.style.cursor = 'default';
+    c.onclick = null;
+  });
+
+  const picked = cupCafes[idx];
+
+  // 선택 안 된 컵 흐리게
+  document.querySelectorAll('.cup-card').forEach((c, i) => {
+    if (i !== idx) c.classList.add('faded');
+  });
+
+  // 선택된 컵: 이미지 사라지고 카페명 등장
+  setTimeout(() => {
+    const winner = document.getElementById('cup-' + idx);
+    winner.classList.add('picked', 'winner-cup');
+    saveResult(picked);
+    launchConfetti();
+    setTimeout(() => showPopup(picked), 800);
+  }, 200);
+}
+
+const POPUP_MSGS = [
+  { emoji: '💸', msg: '통장 털 친구들에게도 알려둘게요!' },
+  { emoji: '🏃', msg: '도망가셔도 소용없어요. 튜커가 다 봤습니다.' },
+  { emoji: '😇', msg: '이건 신의 뜻입니다. 튜커가 직접 확인했어요.' },
+  { emoji: '🎰', msg: '조작 의혹 제기 금지. 튜커는 공정합니다.' },
+  { emoji: '📢', msg: '전 직원 비상소집. 커피 타임 12:20 지각 금지.' },
+  { emoji: '🙏', msg: '카드 긁기 전 심호흡 한 번... 그리고 긁으세요.' },
+  { emoji: '👑', msg: '오늘 하루 가장 인기있는 사람이 되셨습니다!' },
+];
+
+function showPopup(cafe) {
+  const pick = POPUP_MSGS[Math.floor(Math.random() * POPUP_MSGS.length)];
+  document.getElementById('popup-emoji').textContent = pick.emoji;
+  document.getElementById('popup-cafe').textContent = cafe + ' 확정!';
+  document.getElementById('popup-msg').textContent = pick.msg;
+  document.getElementById('popup-overlay').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+function launchConfetti() {
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d'), pieces=[];
+  const colors=['#f9a825','#ff6b6b','#4ecdc4','#a29bfe','#ffffff','#fd79a8'];
+  for(let i=0;i<120;i++) pieces.push({
+    x:Math.random()*canvas.width, y:-10-Math.random()*200,
+    w:8+Math.random()*8, h:5+Math.random()*5,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    rot:Math.random()*Math.PI*2, vx:(Math.random()-0.5)*4,
+    vy:3+Math.random()*4, vr:(Math.random()-0.5)*0.2
+  });
+  const end=Date.now()+2500;
+  function frame() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    });
+    if(Date.now()<end) requestAnimationFrame(frame);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  requestAnimationFrame(frame);
+}
+
+show('s-who');
+</script>
+</body>
+</html>
